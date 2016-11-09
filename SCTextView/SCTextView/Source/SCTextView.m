@@ -13,6 +13,16 @@
 #define MARGINY (8)
 
 @interface SCTextView()
+<
+    UITextViewDelegate
+>
+{
+    ///输入的有效字符个数
+    NSInteger _validCharacterCount;
+    
+    //新输入的字符串
+    NSString *_inputString;
+}
 
 ///占位文字
 @property (nonatomic, strong) UILabel *placeHolderLabel;
@@ -59,13 +69,9 @@
 }
 
 - (void)initial {
-
-    ///添加观察者
-    [self addObserver:self forKeyPath:kFONT options:NSKeyValueObservingOptionNew context:nil];
     
-    ///添加通知
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textDidChange:) name:UITextViewTextDidChangeNotification object:self];
-
+    self.delegate = self;
+    
     [self setupUI];
 }
 
@@ -86,27 +92,90 @@
     
 }
 
-#pragma mark --  监测字数改变
-- (void)textDidChange:(NSNotification *)notification {
+#pragma mark -- UITextViewDelegate 监测字数改变
 
+- (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range
+ replacementText:(NSString *)text {
+
+    _inputString = text;
+    
+    [text enumerateSubstringsInRange:NSMakeRange(0, text.length) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+
+        BOOL isEmoji = [self stringContainsEmoji:substring];
+
+        if (isEmoji) {
+            _validCharacterCount ++;
+        }
+        else {
+
+            if (![substring isEqualToString:@" "] && ![substring isEqualToString:@"\n"]) {
+
+                _validCharacterCount ++;
+            }
+
+        }
+
+        NSLog(@"isEmoji       :%d",isEmoji);
+        NSLog(@"substring     :%@",substring);
+
+        NSLog(@"substringRange:%lu,length:%lu",(unsigned long)substringRange.location,substringRange.length);
+
+        NSLog(@"enclosingRange:%lu,length:%lu \n\n",(unsigned long)enclosingRange.location,enclosingRange.length);
+        
+    }];
+    
+    return true;
+}
+
+- (void)textViewDidChange:(UITextView *)textView {
+    
+    
+//    [textView.text enumerateSubstringsInRange:NSMakeRange(0, textView.text.length) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+//        
+//        BOOL isEmoji = [self stringContainsEmoji:substring];
+//        
+//        if (isEmoji) {
+//            _validCharacterCount ++;
+//        }
+//        else {
+//            
+//            if (![substring isEqualToString:@" "] && ![substring isEqualToString:@"\n"]) {
+//                
+//                _validCharacterCount ++;
+//            }
+//            
+//        }
+//        
+//        NSLog(@"isEmoji       :%d",isEmoji);
+//        NSLog(@"substring     :%@",substring);
+//        
+//        NSLog(@"substringRange:%lu,length:%lu",(unsigned long)substringRange.location,substringRange.length);
+//        
+//        NSLog(@"enclosingRange:%lu,length:%lu \n\n",(unsigned long)enclosingRange.location,enclosingRange.length);
+//        
+//    }];
+    
+    UITextRange *ranges = [textView markedTextRange];
+    
+    NSLog(@"%ld-%@-%@-%@",textView.text.length,textView.text,ranges.start,ranges.end);
+    
     self.placeHolderLabel.hidden = self.text.length > 0 ? true: false;
     
     //检测高亮文字输入
     UITextRange *range = [self markedTextRange];
- 
+    
     if (range) return;
-
-    if (self.maxCharacter == 0) return;
+    
+    
     
     if (self.maxCharacter <= self.text.length) {
-
+        
         self.text = [self.text substringWithRange:NSMakeRange(0, self.maxCharacter)];
     }
 
-    NSString *tips = [NSString stringWithFormat:@"您还可以输入%ld个文字",self.maxCharacter - self.text.length];
-    
-    self.displayLabel.text = tips;
+    [self updateDisplay];
 }
+
 
 - (UILabel *)createLabel:(CGRect)frame {
 
@@ -115,6 +184,45 @@
     [self addSubview:label];
     
     return label;
+}
+
+#pragma mark --  判断emoji
+- (BOOL)stringContainsEmoji:(NSString *)string{
+    __block BOOL returnValue = NO;
+    
+    [string enumerateSubstringsInRange:NSMakeRange(0, [string length])
+                               options:NSStringEnumerationByComposedCharacterSequences
+                            usingBlock:^(NSString *substring, NSRange substringRange, NSRange enclosingRange, BOOL *stop) {
+                                const unichar hs = [substring characterAtIndex:0];
+                                if (0xd800 <= hs && hs <= 0xdbff) {
+                                    if (substring.length > 1) {
+                                        const unichar ls = [substring characterAtIndex:1];
+                                        const int uc = ((hs - 0xd800) * 0x400) + (ls - 0xdc00) + 0x10000;
+                                        if (0x1d000 <= uc && uc <= 0x1f77f) {
+                                            returnValue = YES;
+                                        }
+                                    }
+                                } else if (substring.length > 1) {
+                                    const unichar ls = [substring characterAtIndex:1];
+                                    if (ls == 0x20e3) {
+                                        returnValue = YES;
+                                    }
+                                } else {
+                                    if (0x2100 <= hs && hs <= 0x27ff) {
+                                        returnValue = YES;
+                                    } else if (0x2B05 <= hs && hs <= 0x2b07) {
+                                        returnValue = YES;
+                                    } else if (0x2934 <= hs && hs <= 0x2935) {
+                                        returnValue = YES;
+                                    } else if (0x3297 <= hs && hs <= 0x3299) {
+                                        returnValue = YES;
+                                    } else if (hs == 0xa9 || hs == 0xae || hs == 0x303d || hs == 0x3030 || hs == 0x2b55 || hs == 0x2b1c || hs == 0x2b1b || hs == 0x2b50) {
+                                        returnValue = YES;
+                                    }
+                                }
+                            }];
+    
+    return returnValue;
 }
 
 #pragma mark --  观察者
@@ -153,7 +261,7 @@
     //字数检测标签和输入字体大小一致
     self.displayLabel.font = self.font;
     
-    self.displayLabel.text = [NSString stringWithFormat:@"您还可以输入%ld个文字",self.maxCharacter];
+    self.displayLabel.text = [NSString stringWithFormat:@"您还可以输入%ld个文字",self.maxCharacter - self.text.length];
     
     NSDictionary *attribute = @{NSFontAttributeName:self.displayLabel.font};
     
@@ -171,11 +279,6 @@
     frame.size = retSize;
     
     self.displayLabel.frame = frame;
-}
-
-#pragma mark --  析构
-- (void)dealloc {
-    [self removeObserver:self forKeyPath:kFONT];
 }
 
 @end
