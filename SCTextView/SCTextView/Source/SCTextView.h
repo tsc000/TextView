@@ -19,4 +19,6 @@ typedef enum : NSUInteger {
 
 @property (nonatomic, assign) NSInteger maxCharacter;
 
+@property (nonatomic, assign) WordCheck type;
+
 @end

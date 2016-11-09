@@ -45,13 +45,17 @@
     return self;
 }
 
-- (void)awakeFromNib {
+- (void)layoutSubviews {
     
-    [super awakeFromNib];
-
-//    [self updatePlaceholder];
-//    
-//    [self updateDisplay];
+    [super layoutSubviews];
+    
+    [self updatePlaceholder];
+    
+    if (self.maxCharacter) {
+        
+        [self updateDisplay];
+        
+    }
 }
 
 - (void)initial {
@@ -82,22 +86,15 @@
     
 }
 
-- (void)layoutSubviews {
-    
-    [super layoutSubviews];
-    
-    [self updatePlaceholder];
-    
-    if (self.maxCharacter) {
-        
-        [self updateDisplay];
-        
-    }
-}
-
+#pragma mark --  监测字数改变
 - (void)textDidChange:(NSNotification *)notification {
 
     self.placeHolderLabel.hidden = self.text.length > 0 ? true: false;
+    
+    //检测高亮文字输入
+    UITextRange *range = [self markedTextRange];
+ 
+    if (range) return;
 
     if (self.maxCharacter == 0) return;
     
@@ -111,7 +108,6 @@
     self.displayLabel.text = tips;
 }
 
-
 - (UILabel *)createLabel:(CGRect)frame {
 
     UILabel *label = [[UILabel alloc] initWithFrame:frame];
@@ -121,7 +117,7 @@
     return label;
 }
 
-#pragma mark 观察者
+#pragma mark --  观察者
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context {
     
     if ([keyPath isEqualToString:@"font"]) {
@@ -177,7 +173,7 @@
     self.displayLabel.frame = frame;
 }
 
-#pragma mark 析构
+#pragma mark --  析构
 - (void)dealloc {
     [self removeObserver:self forKeyPath:kFONT];
 }
