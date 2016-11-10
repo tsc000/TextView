@@ -17,11 +17,14 @@
     UITextViewDelegate
 >
 {
-    ///输入的有效字符个数
-    NSInteger _validCharacterCount;
+    ///输入的有效字符个数,用于计算显示的个数
+    NSInteger _validCharacterLength;
     
-    //新输入的字符串
-    NSString *_inputString;
+    ///上次保存的字符串
+    NSString *_lastText;
+    
+    //新输入的包含emoji的字符串
+    NSMutableString *_containEmojiString;
 }
 
 ///占位文字
@@ -72,6 +75,10 @@
     
     self.delegate = self;
     
+    self.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+    
+    _containEmojiString = [NSMutableString string];
+    
     [self setupUI];
 }
 
@@ -97,85 +104,60 @@
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range
  replacementText:(NSString *)text {
 
-    _inputString = text;
     
-    [text enumerateSubstringsInRange:NSMakeRange(0, text.length) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
-
-        BOOL isEmoji = [self stringContainsEmoji:substring];
-
-        if (isEmoji) {
-            _validCharacterCount ++;
-        }
-        else {
-
-            if (![substring isEqualToString:@" "] && ![substring isEqualToString:@"\n"]) {
-
-                _validCharacterCount ++;
-            }
-
-        }
-
-        NSLog(@"isEmoji       :%d",isEmoji);
-        NSLog(@"substring     :%@",substring);
-
-        NSLog(@"substringRange:%lu,length:%lu",(unsigned long)substringRange.location,substringRange.length);
-
-        NSLog(@"enclosingRange:%lu,length:%lu \n\n",(unsigned long)enclosingRange.location,enclosingRange.length);
+    if ([self plainText:text]) {
         
-    }];
-    
+        _containEmojiString = [text mutableCopy];
+    }
+
+
     return true;
 }
 
 - (void)textViewDidChange:(UITextView *)textView {
     
-    
-//    [textView.text enumerateSubstringsInRange:NSMakeRange(0, textView.text.length) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
-//        
-//        BOOL isEmoji = [self stringContainsEmoji:substring];
-//        
-//        if (isEmoji) {
-//            _validCharacterCount ++;
-//        }
-//        else {
-//            
-//            if (![substring isEqualToString:@" "] && ![substring isEqualToString:@"\n"]) {
-//                
-//                _validCharacterCount ++;
-//            }
-//            
-//        }
-//        
-//        NSLog(@"isEmoji       :%d",isEmoji);
-//        NSLog(@"substring     :%@",substring);
-//        
-//        NSLog(@"substringRange:%lu,length:%lu",(unsigned long)substringRange.location,substringRange.length);
-//        
-//        NSLog(@"enclosingRange:%lu,length:%lu \n\n",(unsigned long)enclosingRange.location,enclosingRange.length);
-//        
-//    }];
-    
-    UITextRange *ranges = [textView markedTextRange];
-    
-    NSLog(@"%ld-%@-%@-%@",textView.text.length,textView.text,ranges.start,ranges.end);
-    
-    self.placeHolderLabel.hidden = self.text.length > 0 ? true: false;
-    
-    //检测高亮文字输入
+    self.placeHolderLabel.hidden = textView.text.length > 0 ? true: false;
+   
     UITextRange *range = [self markedTextRange];
     
-    if (range) return;
-    
-    
-    
-    if (self.maxCharacter <= self.text.length) {
-        
-        self.text = [self.text substringWithRange:NSMakeRange(0, self.maxCharacter)];
-    }
+    //检测高亮文字输入，有高亮文字不计算个数
+    if (range ) return;
 
+    NSInteger count = [self caculateValidCharacter:self.text];
+    
+    if (self.maxCharacter < count) {
+        
+//        self.text = [self.text substringWithRange:NSMakeRange(0, _lastText.length)];
+        
+        NSUInteger loaction = self.selectedRange.location;
+    
+        self.text = _lastText;
+        
+        self.selectedRange = NSMakeRange(loaction - 1 , 0);
+
+    }
+    else {
+        _lastText = self.text;
+    }
+    
+    NSLog(@"%ld",self.selectedRange.location);
+    
+    
     [self updateDisplay];
 }
 
+#pragma mark --  判断有效字符(可能包含emoji)个数
+- (NSInteger)caculateValidCharacter:(NSString *)text {
+
+    __block NSInteger count = 0;
+    
+    [text enumerateSubstringsInRange:NSMakeRange(0, text.length) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+        
+        count ++;
+    }];
+    
+    return count;
+}
 
 - (UILabel *)createLabel:(CGRect)frame {
 
@@ -258,19 +240,30 @@
 
 - (void)updateDisplay {
     
+//    NSData *lastData = [_lastText dataUsingEncoding:NSNonLossyASCIIStringEncoding];
+//    
+//    NSString *lastString = [[NSString alloc] initWithData:lastData encoding:NSUTF8StringEncoding];
+//    
+//    NSData *nowData = [self.text dataUsingEncoding:NSNonLossyASCIIStringEncoding];
+//    
+//    NSString *nowDataString = [[NSString alloc] initWithData:nowData encoding:NSUTF8StringEncoding];
+
+    
     //字数检测标签和输入字体大小一致
     self.displayLabel.font = self.font;
     
-    self.displayLabel.text = [NSString stringWithFormat:@"您还可以输入%ld个文字",self.maxCharacter - self.text.length];
+    NSInteger count = [self caculateValidCharacter:self.text];
+    
+    self.displayLabel.text = [NSString stringWithFormat:@"您还可以输入%ld个文字",self.maxCharacter - count <= 0? 0:self.maxCharacter - count];
     
     NSDictionary *attribute = @{NSFontAttributeName:self.displayLabel.font};
     
     CGSize size = CGSizeMake(self.frame.size.width - MARGINX, self.frame.size.height);
     
     CGSize retSize = [self.displayLabel.text boundingRectWithSize:size
-                                                    options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
-                                                 attributes:attribute
-                                                    context:nil].size;
+                                                          options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
+                                                       attributes:attribute
+                                                          context:nil].size;
     
     CGRect frame = self.displayLabel.frame;
     
@@ -279,6 +272,42 @@
     frame.size = retSize;
     
     self.displayLabel.frame = frame;
+}
+
+- (BOOL)plainText:(NSString *)text {
+    
+    __block BOOL plainText = false;
+    
+    [text enumerateSubstringsInRange:NSMakeRange(0, text.length) options:NSStringEnumerationByComposedCharacterSequences usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+        
+        BOOL isEmoji = [self stringContainsEmoji:substring];
+        
+        if (isEmoji) {
+            
+            plainText = true;
+            
+            *stop = true;
+            
+        }
+        else {
+            
+            //            if (![substring isEqualToString:@" "] && ![substring isEqualToString:@"\n"]) {
+            //
+            //                _validCharacterCount ++;
+            //            }
+            
+        }
+        
+        //        NSLog(@"isEmoji       :%d",isEmoji);
+        //        NSLog(@"substring     :%@",substring);
+        //
+        //        NSLog(@"substringRange:%lu,length:%lu",(unsigned long)substringRange.location,substringRange.length);
+        //
+        //        NSLog(@"enclosingRange:%lu,length:%lu \n\n",(unsigned long)enclosingRange.location,enclosingRange.length);
+        
+    }];
+    
+    return plainText;
 }
 
 @end

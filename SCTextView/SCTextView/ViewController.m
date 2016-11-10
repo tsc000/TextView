@@ -34,7 +34,7 @@
     
     textView.backgroundColor = [UIColor orangeColor];
     
-    textView.maxCharacter = 40;
+    textView.maxCharacter = 20;
     
     [self.view addSubview:textView];
     
