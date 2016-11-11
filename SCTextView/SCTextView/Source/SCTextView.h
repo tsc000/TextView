@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 
 typedef enum : NSUInteger {
-    WordCheckDefault,
+    WordCheckDefault = 0,
     WordCheckNumber,
 } WordCheck;
 
@@ -20,5 +20,7 @@ typedef enum : NSUInteger {
 @property (nonatomic, assign) NSInteger maxCharacter;
 
 @property (nonatomic, assign) WordCheck type;
+
++ (instancetype)textView:(NSString *)placeHolder Type:(WordCheck)type MaxCharacter:(NSInteger)maxCharacter;
 
 @end

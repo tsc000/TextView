@@ -18,23 +18,25 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    SCTextView *textView = [[SCTextView alloc] init];
+//    SCTextView *textView = [[SCTextView alloc] init];
+
+    SCTextView *textView = [SCTextView textView:@"说点什么呢..." Type:WordCheckDefault MaxCharacter:20];
     
     textView.font = [UIFont systemFontOfSize:18];
     
     textView.frame = CGRectMake(0, 100, self.view.frame.size.width, 100);
     
-//    textView.textColor = [UIColor lightGrayColor];
-    
     textView.center = self.view.center;
     
     textView.textContainerInset = UIEdgeInsetsMake(10, 10, 10, 10);
     
-    textView.placeHolder = @"说点什么呢...";
-    
     textView.backgroundColor = [UIColor orangeColor];
     
-    textView.maxCharacter = 20;
+//    textView.placeHolder = @"说点什么呢...";
+//
+//    textView.maxCharacter = 40;
+//    
+//    textView.type = WordCheckDefault;
     
     [self.view addSubview:textView];
     
