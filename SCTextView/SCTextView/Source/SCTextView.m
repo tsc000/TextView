@@ -103,14 +103,7 @@
     
     if (self = [self initWithFrame:CGRectZero]) {
         
-        if (maxCharacter <= 0) {
-            
-            self.maxCharacter = 1000000;
-            
-            self.displayLabel.hidden = true;
-        }
-        else
-            self.maxCharacter = maxCharacter;
+        self.maxCharacter = maxCharacter;
         
         self.placeHolder = placeHolder;
         
@@ -127,6 +120,13 @@
     
     [self updatePlaceholder];
     
+}
+
+- (void)setMaxCharacter:(NSInteger)maxCharacter {
+
+    _maxCharacter = maxCharacter;
+    
+    self.displayLabel.hidden = _maxCharacter <= 0 ? true : false;
 }
 
 #pragma mark -- UITextViewDelegate 监测字数改变
@@ -148,6 +148,8 @@
 
     NSInteger count = [self caculateValidCharacter:self.text];
     
+    if (self.maxCharacter <= 0) return;
+    
     if (self.maxCharacter < count) {
         
         NSUInteger loaction = self.selectedRange.location;
@@ -155,15 +157,11 @@
         self.text = _lastText;
         
         self.selectedRange = NSMakeRange(loaction - 1 , 0);
-
     }
     else {
         _lastText = self.text;
     }
-    
-    NSLog(@"%ld",self.selectedRange.location);
-    
-    
+
     [self updateDisplay];
 }
 
@@ -260,6 +258,8 @@
 }
 
 - (void)updateDisplay {
+    
+    if (self.maxCharacter <= 0) return;
     
     //字数检测标签和输入字体大小一致
     self.displayLabel.font = self.font;

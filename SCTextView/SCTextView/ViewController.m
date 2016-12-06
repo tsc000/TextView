@@ -20,7 +20,9 @@
     
 //    SCTextView *textView = [[SCTextView alloc] init];
 
-    SCTextView *textView = [SCTextView textView:@"说点什么呢..." Type:WordCheckDefault MaxCharacter:-1];
+    SCTextView *textView = [SCTextView textView:@"说点什么呢..." Type:WordCheckDefault MaxCharacter:10];
+    
+    textView.maxCharacter = 50;
     
     textView.font = [UIFont systemFontOfSize:18];
     
@@ -34,8 +36,8 @@
     
 //    textView.placeHolder = @"说点什么呢...";
 //
-//    textView.maxCharacter = 40;
-//    
+    textView.maxCharacter = 20;
+//
 //    textView.type = WordCheckDefault;
     
     [self.view addSubview:textView];
