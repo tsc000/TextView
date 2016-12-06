@@ -103,7 +103,14 @@
     
     if (self = [self initWithFrame:CGRectZero]) {
         
-        self.maxCharacter = maxCharacter;
+        if (maxCharacter <= 0) {
+            
+            self.maxCharacter = 1000000;
+            
+            self.displayLabel.hidden = true;
+        }
+        else
+            self.maxCharacter = maxCharacter;
         
         self.placeHolder = placeHolder;
         
