@@ -17,6 +17,8 @@ typedef enum : NSUInteger {
 
 @property (nonatomic, copy) NSString *placeHolder;
 
+@property (nonatomic, weak) UIColor *placeHolderColor;
+
 @property (nonatomic, assign) NSInteger maxCharacter;
 
 @property (nonatomic, assign) WordCheck type;

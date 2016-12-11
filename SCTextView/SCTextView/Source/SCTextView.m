@@ -122,6 +122,13 @@
     
 }
 
+- (void)setPlaceHolderColor:(UIColor *)placeHolderColor {
+
+    _placeHolderColor = placeHolderColor;
+    
+    self.placeHolderLabel.textColor = _placeHolderColor;
+}
+
 - (void)setMaxCharacter:(NSInteger)maxCharacter {
 
     _maxCharacter = maxCharacter;

@@ -17,8 +17,6 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-//    SCTextView *textView = [[SCTextView alloc] init];
 
     SCTextView *textView = [SCTextView textView:@"说点什么呢..." Type:WordCheckDefault MaxCharacter:10];
     
@@ -34,8 +32,12 @@
     
     textView.backgroundColor = [UIColor orangeColor];
     
-//    textView.placeHolder = @"说点什么呢...";
-//
+    textView.textColor = [UIColor blueColor];
+    
+    textView.placeHolder = @"说点什么呢...";
+    
+    textView.placeHolderColor = [UIColor redColor];
+    
     textView.maxCharacter = 20;
 //
 //    textView.type = WordCheckDefault;
